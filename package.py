@@ -1,5 +1,5 @@
 class Package:
-    "Package class used to define the notion of a class"
+    "Package class used to define the notion of a package"
     def __init__(self, id, address, city, state, zip, deadline, mass, notes, timestamp):
         self.id = id
         self.address = address
