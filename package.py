@@ -65,6 +65,9 @@ class PackageStatus:
     def get_package(self, key):
         return self.packages.search(key)
 
+    def get_num_packages(self):
+        return self.num_packages
+
     def display_package_status(self, time):
         print("Package ID\tAddress\t\tStatus")
         for i in range(1, self.num_packages + 1):
