@@ -2,7 +2,7 @@ from hash import HashTable
 
 class Package:
     """Package class used to define the notion of a package"""
-    def __init__(self, id, address, city, state, zip, deadline, mass, notes, timestamp):
+    def __init__(self, id, address, city, state, zip, deadline, mass, notes):
         self.id = id
         self.address = address
         self.city = city
@@ -11,6 +11,7 @@ class Package:
         self.deadline = deadline
         self.mass = mass
         self.notes = notes
+        # all packages start undelivered, minimum time can leave is 8am
         self.timestamp = None
 
     # set the timestamp only when the package is delivered
@@ -52,9 +53,8 @@ class PackageStatus:
         # initialize hash table to size of amount of packages
         self.num_packages = len(package_list)
         self.packages = HashTable(self.num_packages)
-        for i in self.num_packages:
-            self.packages.insert(package_list[i].get_id, package_list[i])
-        
+        for package in package_list:
+            self.packages.insert(package.get_id() - 1, package)
 
     def add_timestamp(self, id, time):
         package = self.packages.search(id)
@@ -63,12 +63,15 @@ class PackageStatus:
 
     def display_package_status(self, time):
         print("Package ID\tStatus")
-        for i in self.num_packages:
+        for i in range(0, self.num_packages):
             current_package = self.packages.search(i)
-            print(current_package.get_id() + "\t", end="")
+            print(str(current_package.get_id()) + "\t", end="")
+            # if timestamp is none, undelivered
+            if not current_package.get_timestamp():
+                print("Undelivered")
             # if current package timestamp is less than time given, it has been delivered
-            if current_package.get_timestamp() < time:
-                print("Delivered at " + self.packages.search(i).get_timestamp())
+            elif current_package.get_timestamp() < time:
+                print("Delivered at " + str(self.packages.search(i).get_timestamp()))
             else:
                 print("Undelivered")
             
