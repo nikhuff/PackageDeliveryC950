@@ -1,4 +1,5 @@
 from hash import HashTable
+import datetime
 
 class Package:
     """Package class used to define the notion of a package"""
@@ -54,24 +55,27 @@ class PackageStatus:
         self.num_packages = len(package_list)
         self.packages = HashTable(self.num_packages)
         for package in package_list:
-            self.packages.insert(package.get_id() - 1, package)
+            self.packages.insert(package.get_id(), package)
 
     def add_timestamp(self, id, time):
         package = self.packages.search(id)
         package.set_timestamp(time)
         self.packages.insert(id, package)
 
+    def get_package(self, key):
+        return self.packages.search(key)
+
     def display_package_status(self, time):
-        print("Package ID\tStatus")
-        for i in range(0, self.num_packages):
+        print("Package ID\tAddress\t\tStatus")
+        for i in range(1, self.num_packages + 1):
             current_package = self.packages.search(i)
-            print(str(current_package.get_id()) + "\t", end="")
+            print(str(current_package.get_id()) + "\t\t" + current_package.get_address() + "\t", end="")
             # if timestamp is none, undelivered
             if not current_package.get_timestamp():
                 print("Undelivered")
             # if current package timestamp is less than time given, it has been delivered
             elif current_package.get_timestamp() < time:
-                print("Delivered at " + str(self.packages.search(i).get_timestamp()))
+                print("Delivered at " + str(datetime.timedelta(hours=current_package.get_timestamp()))[:-3])
             else:
                 print("Undelivered")
             

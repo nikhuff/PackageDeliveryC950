@@ -38,9 +38,9 @@ class DataProcessing:
         # return the completed distance table
         return distance_table
 
-    def create_address_list(self):
+    def create_address_dict(self):
         # create list to return
-        address_list = list()
+        address_list = dict()
 
         # open the csv where data is
         with open(self.distances_url) as csv_file:
@@ -53,7 +53,8 @@ class DataProcessing:
                     for string in row:
                         # we only want the data in column 1
                         if row.index(string) == 1:
-                            address_list.append(string)
+                            # assign address values for lookup later
+                            address_list.update({string.strip().split('\n')[0]: row_count - 1})
                 # keep track of the row we're in
                 row_count += 1
         # return the completed address list
@@ -87,7 +88,8 @@ class DataProcessing:
 if __name__ == '__main__':
     data = DataProcessing('assets/DistanceCSV.csv', 'assets/PackageCSV.csv')
     distance_table = data.create_distance_table()
-    address_list = data.create_address_list()
+    address_dict = data.create_address_dict()
+    print(address_dict)
     package_status = data.create_package_table()
     package_status.display_package_status(17)
 

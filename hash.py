@@ -11,16 +11,16 @@ class HashTable:
 
     def insert(self, id, package):
         # insert the package into the bucket
-        self.table[id] = package
+        self.table[id - 1] = package
 
     def search(self, key):
         # get the bucket
         # bucket = hash(key) % len(self.table)
 
         # return item
-        return self.table[key]
+        return self.table[key - 1]
 
     def remove(self, key):
         # get the bucket
         # remove item
-        del self.table[key]
+        del self.table[key - 1]
