@@ -61,8 +61,6 @@ class Truck:
         self.destination = 0
         self.deliver()
 
-
-
 class RoutingStation:
     """Class used for all things routing"""
     def __init__(self, package_status, maps):
@@ -74,12 +72,77 @@ class RoutingStation:
     def load_trucks(self):
         truck1_packages = list()
         truck2_packages = list()
-        for i in range(1, 21):
-            truck1_packages.append(package_status.get_package(i))
-        for i in range(21, 41):
-            truck2_packages.append(package_status.get_package(i))
+        all_packages = list()
+        inital_position = 0
+        # initialize closest to random highest
+        closest = (100.0, 0, 88888)
+        second_closest = (float(), int(), 88888)
+        for i in range(1, self.package_status.get_num_packages + 1):
+            all_packages.append(package_status.get_package(i))
+
+        # split lists into zip codes
+        # list of all possible zip codes we deliver to
+        zip_codes = [[84104], [84106], [84123], [84115], [84103], [84118], [84119], [84111], [84117], [84107], [84105], [84121]]
+        
+        # and find initial two closest packages
+        for package in all_packages:
+            # find closest packages
+            address_index = self.maps.get_address_index(package.get_address())
+            distance = self.maps.get_distance(inital_position, address_index)
+            if distance < closest[0]:
+                second_closest = closest
+                closest = (distance, package.get_id(), package.get_zip())
+
+        # start with the two closest packages
+        truck1_packages.append(package_status.get_package(closest[1]))
+        truck2_packages.append(package_status.get_package(second_closest[2]))
+
+        # remove the two packages that have already been put in the delivery queue
+        all_packages[:] = [package for package in all_packages if not package.get_id() == closest[1]]
+        all_packages[:] = [package for package in all_packages if not package.get_id() == second_closest[1]]
+
+        # add each element in to list based on zip code match
+        for package in all_packages:
+            if package.get_zip() == zip_codes[0][0]:
+                zip_codes[0].append(package)
+            elif package.get_zip() == zip_codes[1][0]:
+                zip_codes[1].append(package)
+            elif package.get_zip() == zip_codes[2][0]:
+                zip_codes[2].append(package)
+            elif package.get_zip() == zip_codes[3][0]:
+                zip_codes[3].append(package)
+            elif package.get_zip() == zip_codes[4][0]:
+                zip_codes[4].append(package)
+            elif package.get_zip() == zip_codes[5][0]:
+                zip_codes[5].append(package)
+            elif package.get_zip() == zip_codes[6][0]:
+                zip_codes[6].append(package)
+            elif package.get_zip() == zip_codes[7][0]:
+                zip_codes[7].append(package)
+            elif package.get_zip() == zip_codes[8][0]:
+                zip_codes[8].append(package)
+            elif package.get_zip() == zip_codes[9][0]:
+                zip_codes[9].append(package)
+            elif package.get_zip() == zip_codes[10][0]:
+                zip_codes[10].append(package)
+            elif package.get_zip() == zip_codes[11][0]:
+                zip_codes[11].append(package)
+
+        # while truck1 list is under capacity
+
+        # find closest package in [0] of the zip code arrays using [-1] of truck list
+
+        # add that list of zip codes
+
+        # while truck2 list is under capacity
+
+        # find closest package in [0] of the zip code arrays using [-1] of truck list
+
+        # add that list of zip codes
+
         self.truck1 = Truck(truck1_packages, self.maps)
         self.truck2 = Truck(truck2_packages, self.maps)
+        
 
     def start(self):
         self.truck1.start_route(self.package_status)
