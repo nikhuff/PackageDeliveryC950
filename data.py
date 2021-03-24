@@ -60,12 +60,34 @@ class DataProcessing:
         return address_list
 
     def create_package_table(self):
-        
-        return
+        # create list to return
+        package_list = list()
+
+        # open csv where data is
+        with open(self.packages_url) as csv_file:
+            csv_reader = csv.reader(csv_file, delimiter=',')
+            # package id, address, city, state, zip, deadline, mass, notes
+            for row in csv_reader:
+                # change EOD to 0.0 so all same data type
+                if row[5] == 'EOD':
+                    deadline = 0.0
+                else:
+                    deadline = float(row[5])
+                # create package object from row data
+                package = Package(int(row[0]), row[1], row[2], row[3], int(row[4]), deadline, int(row[6]), row[7])
+                # insert package object to list
+                package_list.append(package)
+
+        # create PackageStatus hash
+        package_status = PackageStatus(package_list)
+
+        # return PackageStatus
+        return package_status
 
 if __name__ == '__main__':
     data = DataProcessing('assets/DistanceCSV.csv', 'assets/PackageCSV.csv')
     distance_table = data.create_distance_table()
     address_list = data.create_address_list()
-    print(address_list)
+    package_status = data.create_package_table()
+    package_status.display_package_status(17)
 
