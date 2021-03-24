@@ -28,7 +28,7 @@ class Truck:
         self.distance_traveled = 0
         self.maps = maps
         self.packages = packages
-        self.speed = 18 # mph
+        self.speed = 18.0 # mph
         self.time = 8.0 # am
         self.location = 0 # start at WGU 
         self.destination = 0 # not going anywhere yet
@@ -52,10 +52,10 @@ class Truck:
     def start_route(self, package_status):
         # deliver the packages in the list
         while self.packages:
-            self.deliver()
-            package = self.packages.pop()
+            package = self.packages.pop(0)
             next_address = package.get_address()
             self.destination = maps.get_address_index(next_address)
+            self.deliver()
             package_status.add_timestamp(package.get_id(), self.time)
         # one more delivery to return to WGU
         self.destination = 0
@@ -77,7 +77,7 @@ class RoutingStation:
         # initialize closest to random highest
         closest = (100.0, 0, 88888)
         second_closest = (float(), int(), 88888)
-        for i in range(1, self.package_status.get_num_packages + 1):
+        for i in range(1, self.package_status.get_num_packages() + 1):
             all_packages.append(package_status.get_package(i))
 
         # split lists into zip codes
@@ -95,7 +95,7 @@ class RoutingStation:
 
         # start with the two closest packages
         truck1_packages.append(package_status.get_package(closest[1]))
-        truck2_packages.append(package_status.get_package(second_closest[2]))
+        truck2_packages.append(package_status.get_package(second_closest[1]))
 
         # remove the two packages that have already been put in the delivery queue
         all_packages[:] = [package for package in all_packages if not package.get_id() == closest[1]]
@@ -129,16 +129,45 @@ class RoutingStation:
                 zip_codes[11].append(package)
 
         # while truck1 list is under capacity
+        while len(truck1_packages) < 16 and zip_codes:
+            # print("while loop")
+            # whats the last packages address and index
+            address = truck1_packages[-1].get_address()
+            location = self.maps.get_address_index(address)
+            closest = (100.0, 0, 88888)
+            for zip in zip_codes:
+                # find distance between last package and potential next package
+                destination = self.maps.get_address_index(zip[1].get_address())
+                distance = self.maps.get_distance(location, destination)
+                if distance < closest[0]:
+                    closest = (distance, zip[1].get_id(), zip[0])
+            # add the closest package and all other packages in that delivery area
+            for zip in zip_codes:
+                if zip[0] == closest[2]:
+                    truck1_packages += zip[1:]
+            
+            zip_codes[:] = [zip for zip in zip_codes if not zip[0] == closest[2]]
 
-        # find closest package in [0] of the zip code arrays using [-1] of truck list
+            
+        while len(truck2_packages) < 16 and zip_codes:
+            # print("while loop")
+            # whats the last packages address and index
+            address = truck2_packages[-1].get_address()
+            location = self.maps.get_address_index(address)
+            closest = (100.0, 0, 88888)
+            for zip in zip_codes:
+                # find distance between last package and potential next package
+                destination = self.maps.get_address_index(zip[1].get_address())
+                distance = self.maps.get_distance(location, destination)
+                if distance < closest[0]:
+                    closest = (distance, zip[1].get_id(), zip[0])
+            # add the closest package and all other packages in that delivery area
+            for zip in zip_codes:
+                if zip[0] == closest[2]:
+                    truck2_packages += zip[1:]
 
-        # add that list of zip codes
-
-        # while truck2 list is under capacity
-
-        # find closest package in [0] of the zip code arrays using [-1] of truck list
-
-        # add that list of zip codes
+            
+            zip_codes[:] = [zip for zip in zip_codes if not zip[0] == closest[2]]
 
         self.truck1 = Truck(truck1_packages, self.maps)
         self.truck2 = Truck(truck2_packages, self.maps)
@@ -157,5 +186,5 @@ if __name__ == '__main__':
     route.load_trucks()
     total_distance = route.start()
     package_status.display_package_status(20)
-    print("Total Distance Traveled: " + str(total_distance))
+    print("Total Distance Traveled: %.2f" % total_distance)
     
