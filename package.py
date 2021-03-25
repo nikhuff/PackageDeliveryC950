@@ -19,6 +19,9 @@ class Package:
     def set_timestamp(self, time):
         self.timestamp = time
 
+    def set_address(self, address):
+        self.address = address
+
     def get_id(self):
         return self.id
     
@@ -60,6 +63,11 @@ class PackageStatus:
     def add_timestamp(self, id, time):
         package = self.packages.search(id)
         package.set_timestamp(time)
+        self.packages.insert(id, package)
+
+    def update_address(self, id, new_address):
+        package = self.packages.search(id)
+        package.set_address(new_address)
         self.packages.insert(id, package)
 
     def get_package(self, key):
