@@ -52,6 +52,9 @@ class Truck:
     def reload(self):
         self.destination = 0
         self.deliver()
+        # if you're here before packages arrive, wait
+        if self.time < 9.09:
+            self.time = 9.10
 
     def start_route(self, package_status):
         # deliver the packages in the list
@@ -60,6 +63,13 @@ class Truck:
             if package == 0:
                 self.reload()
                 continue
+            if package.get_id() == 9:
+                if self.time > 10.4:
+                    package_status.update_address(9, '410 S State St')
+                if package_status.get_package(9).get_address() == '300 State St':
+                    self.time +=.05
+                    self.packages.insert(0, package)
+                    continue
             next_address = package.get_address()
             self.destination = maps.get_address_index(next_address)
             self.deliver()
@@ -75,6 +85,16 @@ class RoutingStation:
         self.package_status = package_status
         self.truck1 = None
         self.truck2 = None
+
+    def check_notes(self, package_notes):
+        return {
+            'Wrong address listed': 1,
+            'Delayed on flight---will not arrive to depot until 9:05 am': 2,
+            'Can only be on truck 2': 3,
+            'Must be delivered with 15, 19': 4,
+            'Must be delivered with 13, 19': 5,
+            'Must be delivered with 13, 15': 6
+        }.get(package_notes, 0)
 
     def load_trucks(self):
         truck1_packages = list()
@@ -101,12 +121,19 @@ class RoutingStation:
                 closest1 = (distance, package.get_id())
 
         # start with the two closest packages
-        truck1_packages.append(package_status.get_package(closest1[1]))
-        truck2_packages.append(package_status.get_package(closest2[1]))
+        truck2_packages.append(package_status.get_package(closest1[1]))
+        truck1_packages.append(package_status.get_package(closest2[1]))
 
         # remove the two packages that have already been put in the delivery queue
         all_packages[:] = [package for package in all_packages if not package.get_id() == closest1[1]]
         all_packages[:] = [package for package in all_packages if not package.get_id() == closest2[1]]
+
+        # helper variable for measuring distance from HQ
+        at_hq1 = False
+        at_hq2 = False
+        has_refilled1 = False
+        has_refilled2 = False
+
 
         while all_packages:
             # reset closest tuples
@@ -116,24 +143,174 @@ class RoutingStation:
             for package in all_packages:
                 # find closest packages
                 address_index = self.maps.get_address_index(package.get_address())
-                truck_index = self.maps.get_address_index(truck1_packages[-1].get_address())
+                if at_hq1:
+                    truck_index = 0
+                else:
+                    truck_index = self.maps.get_address_index(truck1_packages[-1].get_address())
                 distance = self.maps.get_distance(truck_index, address_index)
                 if distance < closest1[0]:
                     closest1 = (distance, package.get_id())
+            
+            # helper variable to determine if truck has stopped at HQ
+            # look at special notes and change package if needed
+            notes = self.check_notes(package_status.get_package(closest1[1]).get_notes())
+            if notes == 0:
+                # print("1.0")
+                if len(truck1_packages) < 17 or has_refilled1:
+                    truck1_packages.append(package_status.get_package(closest1[1]))
+                    at_hq1 = False
+                    all_packages[:] = [package for package in all_packages if not package.get_id() == closest1[1]]
+                else:
+                    truck1_packages.append(0)
+                    has_refilled1 = True
+                    at_hq1 = True
+            elif notes == 1:
+                # print("1.1")
+                # don't add package until the very end
+                if has_refilled1:
+                    truck1_packages.append(package_status.get_package(closest1[1]))
+                    at_hq1 = False
+                    all_packages[:] = [package for package in all_packages if not package.get_id() == closest1[1]]
+            elif notes == 2:
+                # print("1.2")
+                # don't add package until after truck goes back to refill
+                if has_refilled1:
+                    truck1_packages.append(package_status.get_package(closest1[1]))
+                    at_hq1 = False
+                    all_packages[:] = [package for package in all_packages if not package.get_id() == closest1[1]]
+                # print("1.3")
+            elif notes == 4:
+                # print("1.4")
+                # add package 13 14 15 16 19 20 with it
+                for package in all_packages:
+                    # find and add all associated packages
+                    if package.get_id() in [13, 14, 15, 16, 19, 20] and (len(truck1_packages) < 11 or has_refilled1):
+                        truck1_packages.append(package_status.get_package(package.get_id()))
+                        at_hq1 = False
+                        all_packages[:] = [extra for extra in all_packages if not extra.get_id() == package.get_id()]
+                    else:
+                        truck1_packages.append(0)
+                        has_refilled1 = True
+                        at_hq1 = True
+            elif notes == 5:
+                # print("1.5")
+                # add package 13 14 15 16 19 20 with it
+                for package in all_packages:
+                    # find and add all associated packages
+                    if package.get_id() in [13, 14, 15, 16, 19, 20] and (len(truck1_packages) < 11 or has_refilled1):
+                        truck1_packages.append(package_status.get_package(package.get_id()))
+                        at_hq1 = False
+                        all_packages[:] = [extra for extra in all_packages if not extra.get_id() == package.get_id()]
+                    else:
+                        truck1_packages.append(0)
+                        has_refilled1 = True
+                        at_hq1 = True
+            elif notes == 6:
+                # print("1.6")
+                # print(len(truck1_packages))
+                # add package 13 14 15 16 19 20 with it
+                for package in all_packages:
+                    # find and add all associated packages
+                    if package.get_id() in [13, 14, 15, 16, 19, 20] and (len(truck1_packages) < 11 or has_refilled1):
+                        truck1_packages.append(package_status.get_package(package.get_id()))
+                        at_hq1 = False
+                        all_packages[:] = [extra for extra in all_packages if not extra.get_id() == package.get_id()]
+                    else:
+                        truck1_packages.append(0)
+                        has_refilled1 = True
+                        at_hq1 = True
 
-            truck1_packages.append(package_status.get_package(closest1[1]))
-            all_packages[:] = [package for package in all_packages if not package.get_id() == closest1[1]]
-
+            # find next for truck 2
             for package in all_packages:
                 # find closest packages
                 address_index = self.maps.get_address_index(package.get_address())
-                truck_index = self.maps.get_address_index(truck2_packages[-1].get_address())
+                if at_hq2:
+                    truck_index = 0
+                else:
+                    truck_index = self.maps.get_address_index(truck2_packages[-1].get_address())
                 distance = self.maps.get_distance(truck_index, address_index)
                 if distance < closest2[0]:
                     closest2 = (distance, package.get_id())
 
-            truck2_packages.append(package_status.get_package(closest2[1]))
-            all_packages[:] = [package for package in all_packages if not package.get_id() == closest2[1]]
+            # helper variable to determine if truck has stopped at HQ
+            # look at special notes and change package if needed
+            notes = self.check_notes(package_status.get_package(closest2[1]).get_notes())
+            if notes == 0:
+                # print(2.0)
+                if len(truck2_packages) < 17 or has_refilled2:
+                    truck2_packages.append(package_status.get_package(closest2[1]))
+                    at_hq2 = False
+                    all_packages[:] = [package for package in all_packages if not package.get_id() == closest2[1]]
+                else:
+                    truck2_packages.append(0)
+                    has_refilled2 = True
+                    at_hq2 = True
+            elif notes == 1:
+                # print(2.1)
+                # don't add package until address is updated
+                # print(package_status.get_package(9).get_address())
+                if has_refilled2:
+                    truck2_packages.append(package_status.get_package(closest2[1]))
+                    at_hq2 = False
+                    all_packages[:] = [package for package in all_packages if not package.get_id() == closest2[1]]
+            elif notes == 2:
+                # print(2.2)
+                # don't add package until after truck goes back to refill
+                if has_refilled2:
+                    truck2_packages.append(package_status.get_package(closest2[1]))
+                    at_hq2 = False
+                    all_packages[:] = [package for package in all_packages if not package.get_id() == closest2[1]]
+            elif notes == 3:
+                # print(2.3)
+                # add package to this truck
+                if len(truck2_packages) < 17 or has_refilled2:
+                    truck2_packages.append(package_status.get_package(closest2[1]))
+                    at_hq2 = False
+                    all_packages[:] = [package for package in all_packages if not package.get_id() == closest2[1]]
+                else:
+                    truck2_packages.append(0)
+                    has_refilled2 = True
+                    at_hq2 = True
+            elif notes == 4:
+                # print(2.4)
+                # add package 13 14 15 16 19 20 with it
+                for package in all_packages:
+                    # find and add all associated packages
+                    if package.get_id() in [13, 14, 15, 16, 19, 20] and (len(truck2_packages) < 11 or has_refilled2):
+                        truck2_packages.append(package_status.get_package(package.get_id()))
+                        at_hq2 = False
+                        all_packages[:] = [extra for extra in all_packages if not extra.get_id() == package.get_id()]
+                    else:
+                        truck2_packages.append(0)
+                        has_refilled1 = True
+                        at_hq2 = True
+            elif notes == 5:
+                # print(2.5)
+                # add package 13 14 15 16 19 20 with it
+                for package in all_packages:
+                    # find and add all associated packages
+                    if package.get_id() in [13, 14, 15, 16, 19, 20] and (len(truck2_packages) < 11 or has_refilled2):
+                        truck2_packages.append(package_status.get_package(package.get_id()))
+                        at_hq2 = False
+                        all_packages[:] = [extra for extra in all_packages if not extra.get_id() == package.get_id()]
+                    else:
+                        truck2_packages.append(0)
+                        has_refilled1 = True
+                        at_hq2 = True
+            elif notes == 6:
+                # print(2.6)
+                # print(len(truck2_packages))
+                # add package 13 14 15 16 19 20 with it
+                for package in all_packages:
+                    # find and add all associated packages
+                    if package.get_id() in [13, 14, 15, 16, 19, 20] and (len(truck2_packages) < 11 or has_refilled2):
+                        truck2_packages.append(package_status.get_package(package.get_id()))
+                        at_hq2 = False
+                        all_packages[:] = [extra for extra in all_packages if not extra.get_id() == package.get_id()]
+                    else:
+                        truck2_packages.append(0)
+                        has_refilled1 = True
+                        at_hq2 = True
 
         self.truck1 = Truck(truck1_packages, self.maps)
         self.truck2 = Truck(truck2_packages, self.maps)
