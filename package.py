@@ -1,5 +1,6 @@
 from hash import HashTable
 import datetime
+from tabulate import tabulate
 
 class Package:
     """Package class used to define the notion of a package"""
@@ -13,11 +14,19 @@ class Package:
         self.mass = mass
         self.notes = notes
         # all packages start undelivered, minimum time can leave is 8am
-        self.timestamp = None
+        self.delivery_timestamp = None
+        self.truck_timestamp = None
+        self.delivery_truck = None
 
     # set the timestamp only when the package is delivered
     def set_timestamp(self, time):
-        self.timestamp = time
+        self.delivery_timestamp = time
+
+    def set_truck_timestamp(self, time):
+        self.truck_timestamp = time
+
+    def set_delivery_truck(self, truck):
+        self.delivery_truck = truck
 
     def set_address(self, address):
         self.address = address
@@ -47,8 +56,13 @@ class Package:
         return self.notes
 
     def get_timestamp(self):
-        return self.timestamp
+        return self.delivery_timestamp
 
+    def get_truck_timestamp(self):
+        return self.truck_timestamp
+
+    def get_delivery_truck(self):
+        return self.delivery_truck
 
 
 class PackageStatus:
@@ -65,6 +79,16 @@ class PackageStatus:
         package.set_timestamp(time)
         self.packages.insert(id, package)
 
+    def add_truck_timestamp(self, id, time):
+        package = self.packages.search(id)
+        package.set_truck_timestamp(time)
+        self.packages.insert(id, package)
+   
+    def add_delivery_truck(self, id, delivery_truck):
+        package = self.packages.search(id)
+        package.set_delivery_truck(delivery_truck)
+        self.packages.insert(id, package)
+
     def update_address(self, id, new_address):
         package = self.packages.search(id)
         package.set_address(new_address)
@@ -77,16 +101,20 @@ class PackageStatus:
         return self.num_packages
 
     def display_package_status(self, time):
-        print("Package ID\tAddress\t\tStatus")
+        data = []
         for i in range(1, self.num_packages + 1):
             current_package = self.packages.search(i)
-            print(str(current_package.get_id()) + "\t\t" + current_package.get_address() + "\t", end="")
-            # if timestamp is none, undelivered
+            delivery_status = str()
             if not current_package.get_timestamp():
-                print("Undelivered")
+                delivery_status = "Undelivered"
             # if current package timestamp is less than time given, it has been delivered
             elif current_package.get_timestamp() < time:
-                print("Delivered at " + str(datetime.timedelta(hours=current_package.get_timestamp()))[:-3])
+                delivery_status = "delivered at " + str(datetime.timedelta(hours=current_package.get_timestamp()))[:-3]
+            elif current_package.get_truck_timestamp() < time:
+                delivery_status = "en route"
             else:
-                print("Undelivered")
+                delivery_status = "at the hub"
+            data.append([current_package.get_id(), current_package.get_address(), current_package.get_delivery_truck(), delivery_status])
+            # if timestamp is none, undelivered
+        print (tabulate(data, headers=["Package ID", "Address", "Truck #", "Status"], numalign="left"))
             
