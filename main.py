@@ -1,20 +1,23 @@
 # Nicholas Huff 003860221
 
+from package import *
+from routing import *
+from data import *
+
 if __name__ == '__main__':
-    # process data from csv
-    distances = DataProcessing.createDistanceTable()
-    addresses = DataProcessing.createAddressList()
-    packageStatus = DataProcessing.createPackageHash()
-
-    # route trucks
-    truck1, truck2 = RoutingStation.routeTrucks()
-
-    # start delivery
-    truck1.startRoute()
-    truck2.startRoute()
-
-    # display total mileage
-    totalDistance = truck1.getDistanceTraveled() + truck2.getDistanceTraveled()
-
-    # display package data at given time
-    displayPackageStatus(time)
+    package_status = data.create_package_table()
+    routing_station = RoutingStation(package_status)
+    routing_station.load_trucks()
+    total_distance = routing_station.start()
+    print("Total Distance Traveled: %.2f" % total_distance)
+    while True:
+        time = input('What time would you like to view (military)? (type "quit" to quit):')
+        if time == 'quit':
+            break
+        else:
+            try:
+                time = float(time)
+            except:
+                print("Please enter a valid input")
+                continue
+            package_status.display_package_status(time)
