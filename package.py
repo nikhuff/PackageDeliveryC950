@@ -1,6 +1,5 @@
 from hash import HashTable
 import datetime
-from tabulate import tabulate
 
 class Package:
     """Package class used to define the notion of a package"""
@@ -101,7 +100,7 @@ class PackageStatus:
         return self.num_packages
 
     def display_package_status(self, time):
-        data = []
+        data = {}
         for i in range(1, self.num_packages + 1):
             current_package = self.packages.search(i)
             delivery_status = str()
@@ -114,7 +113,10 @@ class PackageStatus:
                 delivery_status = "en route"
             else:
                 delivery_status = "at the hub"
-            data.append([current_package.get_id(), current_package.get_address(), current_package.get_delivery_truck(), delivery_status])
+            data[current_package.get_id()] = [current_package.get_address(), current_package.get_delivery_truck(), delivery_status]
             # if timestamp is none, undelivered
-        print (tabulate(data, headers=["Package ID", "Address", "Truck #", "Status"], numalign="left"))
+        print ("{:<10} {:<40} {:<10} {:<10}".format('Package ID','Address','Truck #','Status'))
+        for k, v in data.items():
+            address, truck, status = v
+            print ("{:<10} {:<40} {:<10} {:<10}".format(k, address, truck, status))
             
